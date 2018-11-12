@@ -18,7 +18,7 @@ if(len(sys.argv)>1):
     operation = sys.argv[2]
     
     if(operation == "-c" or operation == "-d" or operation == "-a"):
-        pass
+        gesture_recognition.manage(camera_index, operation)
     else:
         if(operation != "-h"):
             print("Sorry Wrong Arguments")
