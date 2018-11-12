@@ -4,6 +4,21 @@ import cv2
 from color_detection import RangeColorDetector
 from keras.models import load_model
 from keras.preprocessing import image
+import os
+
+# -----------------Tensorflow session bug fixed---------------------
+import tensorflow as tf
+from keras.backend.tensorflow_backend import set_session
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+tf.logging.set_verbosity(tf.logging.ERROR)
+
+config = tf.ConfigProto(
+    gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.8)
+    # device_count = {'GPU': 1}
+)
+config.gpu_options.allow_growth = True
+session = tf.Session(config=config)
+set_session(session)
 
 # -----------------Skin range---------------------
 #skin range
@@ -139,10 +154,10 @@ def capture(camera_index, op):
                         frame_captured = 0                   
                     
                 
-                cv2.putText(frame, str(pred), main_window_text_pos, font, main_window_font_scale, fontColor, lineType)
+                cv2.putText(frame, str(pred), main_window_text_pos, font, main_window_font_scale, font_color, main_window_line_type)
                 
                 if(op.calc):
-                    cv2.putText(calc_screen, str(predicted_text), calc_text_pos, font, calc_font_scale, fontColor, 3)
+                    cv2.putText(calc_screen, str(predicted_text), calc_text_pos, font, calc_font_scale, font_color, calc_line_type)
     
                 frame_captured += 1    
             
@@ -176,15 +191,3 @@ if(__name__ == "__main__"):
     manage()
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-
