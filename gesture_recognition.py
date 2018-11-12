@@ -1,7 +1,6 @@
 
 import numpy as np
 import cv2
-import os
 from color_detection import RangeColorDetector
 from keras.models import load_model
 from keras.preprocessing import image
@@ -65,12 +64,16 @@ def rotateImage(image, angle):
 
 posx, posy, width, height = 300, 10, 300, 300
 	
-cap = cv2.VideoCapture("http://192.168.0.102:4747/video", 0)
+cap = cv2.VideoCapture("http://192.168.0.103:4747/video", 0)
 cap.set(cv2.CAP_PROP_FPS, 6000)
 
 predicted_text = ""
 frame_captured = 0
 predicted_res_arr = []
+
+
+frames_per_item = 30
+detection_item_threshold = .8
 
 
 finel_text_image = np.zeros((300, 400, 3), np.uint8)
@@ -101,31 +104,25 @@ while cap.isOpened():
             test_image = np.expand_dims(test_image, axis = 0)
             result = classifier.predict(test_image)
 
-#            print(test_image.shape)
-#            
             _, j = np.unravel_index(result.argmax(), result.shape)
             max_value_index = j
             
-#            -----
-#            if(max_value_index != 4):
-#                predicted_ALPH = chr(max_value_index + 65)    
-#            else: predicted_ALPH = "Nothing"
-#            -----
-            
             pred = class_value_arr[max_value_index]          
-            
             
             predicted_res_arr.append(pred)
             
-            if(frame_captured == 30):
+            if(frame_captured >= frames_per_item):
                 
-                txt = max(predicted_res_arr, key = predicted_res_arr.count)
-                predicted_text += txt
-                predicted_res_arr = []
-                frame_captured = 0
-            
-             
-#            predicted_res_arr.append(pred)
+                max_time_occured_item = max(predicted_res_arr, key = predicted_res_arr.count)
+                max_time_occured_item_occurences = predicted_res_arr.count(max_time_occured_item)
+                
+                prob = max_time_occured_item_occurences / frames_per_item
+                
+                if(prob >= detection_item_threshold):
+                    predicted_text += max_time_occured_item
+                    predicted_res_arr = []
+                    frame_captured = 0
+                
             
             cv2.putText(frame, str(pred), bottomLeftCornerOfText, font, fontScale, fontColor, lineType)
             cv2.putText(finel_text_image, str(predicted_text), (10, 100), font, 1, fontColor, 3)
@@ -141,22 +138,5 @@ while cap.isOpened():
     if cv2.waitKey(1) == ord('q'):
         cv2.destroyAllWindows()
         break
-
-
-    
-"""
-img = cv2.imread('test.jpg')
-img = cv2.resize(img,(320,240))
-img = np.reshape(img,[1,320,240,3])
-
-classes = model.predict_classes(img)
-"""
-#image = np.ones((300, 300, 3), np.uint8)
-#image[:] = (0, 0, 0)
-#cv2.imshow("ss",image)
-#cv2.waitKey()
-
-
-
 
 
