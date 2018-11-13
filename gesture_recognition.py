@@ -62,9 +62,9 @@ alphabet_dict = {'A': 0, 'B': 1, 'C': 2, 'D': 3, 'E': 4, 'F': 5, 'G': 6, 'H': 7,
 # -----------------font properties---------------------
 font = cv2.FONT_HERSHEY_SIMPLEX
 main_window_text_pos, calc_text_pos, res_pos = (80,150), (10, 100), (10, 200)
-main_window_font_scale, calc_font_scale = 5, 1
+main_window_font_scale, calc_font_scale = 5, 2
 font_color = (255,255,255)
-main_window_line_type, calc_line_type = 10, 1
+main_window_line_type, calc_line_type = 10, 2
 
 
 # -----------------Mathmatical---------------------
@@ -167,20 +167,20 @@ def capture(camera_index, op):
             contour = max(contours, key = cv2.contourArea)
             if(cv2.contourArea(contour) > 10000):
                 
-                x1, y1, w1, h1 = cv2.boundingRect(contour)
+                x, y, w, h = cv2.boundingRect(contour)
                 
-                rectangle = binary_filtered[y1:y1+h1, x1:x1+w1]
+                rectangle = binary_filtered[y:y+h, x:x+w]
                 
-                if(w1 > h1):
-                    rectangle = cv2.copyMakeBorder(rectangle, int((w1-h1)/2) , int((w1-h1)/2) , 0, 0, cv2.BORDER_CONSTANT, (0, 0, 0))
-                elif(h1 > w1):
-                    rectangle = cv2.copyMakeBorder(rectangle, 0, 0, int((h1-w1)/2) , int((h1-w1)/2) , cv2.BORDER_CONSTANT, (0, 0, 0))
+                if(w > h):
+                    rectangle = cv2.copyMakeBorder(rectangle, int((w-h)/2) , int((w-h)/2) , 0, 0, cv2.BORDER_CONSTANT, (0, 0, 0))
+                elif(h > w):
+                    rectangle = cv2.copyMakeBorder(rectangle, 0, 0, int((h-w)/2) , int((h-w)/2) , cv2.BORDER_CONSTANT, (0, 0, 0))
                 
-                cv2.rectangle(frame,(x1 + posx, y1 + posy),(x1 + posx + w1, y1 + posy + h1),(0,255,0),2)
+                cv2.rectangle(frame,(x + posx, y + posy), (x + posx + w, y + posy + h), (0,255,0), 2)
 
-#                cv2.imwrite('temp.jpg',  cv2.resize(binary_filtered,(80,80)))
+                cv2.imwrite('temp.jpg',  cv2.resize(binary_filtered,(80,80)))
 
-                cv2.imwrite('temp.jpg',  cv2.resize(rectangle,(80,80)))
+#                cv2.imwrite('temp.jpg',  cv2.resize(rectangle,(80,80)))
 #        
                 test_image = image.load_img('temp.jpg', target_size = (80, 80))
                 test_image = image.img_to_array(test_image)
