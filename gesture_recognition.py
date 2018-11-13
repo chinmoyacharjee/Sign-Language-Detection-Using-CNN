@@ -62,7 +62,7 @@ alphabet_dict = {'A': 0, 'B': 1, 'C': 2, 'D': 3, 'E': 4, 'F': 5, 'G': 6, 'H': 7,
 # -----------------font properties---------------------
 font = cv2.FONT_HERSHEY_SIMPLEX
 main_window_text_pos, calc_text_pos, res_pos = (80,150), (10, 100), (10, 200)
-main_window_font_scale, calc_font_scale = 5, 2
+main_window_font_scale, calc_font_scale = 5, 1
 font_color = (255,255,255)
 main_window_line_type, calc_line_type = 10, 2
 
@@ -246,7 +246,7 @@ def capture(camera_index, op):
             break
 
 
-def manage(camera_index = "http://192.168.0.102:4747/video", operation = "-c"):
+def manage(camera_index = "http://192.168.0.102:4747/video", operation = "-a"):
     model = ""
     op_dict = {}
     
