@@ -5,8 +5,9 @@ from color_detection import RangeColorDetector
 from keras.models import load_model
 from keras.preprocessing import image
 import os
+from py_expression_eval import Parser
 
-# -----------------Tensorflow session bug fixed---------------------
+# -----------------Tensorflow session related---------------------
 import tensorflow as tf
 from keras.backend.tensorflow_backend import set_session
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
@@ -53,17 +54,21 @@ digit_model = "digit_model_0_10.h5"
 alphabet_model = "alphabetA-Z.h5"
 
 # -----------------models dictionaries---------------------
-calculator_dict = {'0': 0, '1': 1, '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8, '9': 9, '/': 10, '-': 11, '*': 12, '+': 13, '10': 14}
+calculator_dict = {'0': 0, '1': 1, '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8, '9': 9, 'del': 10, '/': 11, '=': 12, '-': 13, '*': 14, '+': 15, '10': 10}
 digit_dict = {'0': 0, '1': 1, '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8, '9': 9, '10': 10}
 alphabet_dict = {'A': 0, 'B': 1, 'C': 2, 'D': 3, 'E': 4, 'F': 5, 'G': 6, 'H': 7, 'I': 8, 'J': 9, 'K': 10, 'L': 11, 'M': 12, 'N': 13,
                      'O': 14, 'P': 15, 'Q': 16, 'T': 17, 'U': 18, 'V': 19, 'W': 20, 'Y': 21, 'Z': 22}
 
 # -----------------font properties---------------------
 font = cv2.FONT_HERSHEY_SIMPLEX
-main_window_text_pos, calc_text_pos = (80,150), (10, 100)
+main_window_text_pos, calc_text_pos, res_pos = (80,150), (10, 100), (10, 200)
 main_window_font_scale, calc_font_scale = 5, 1
 font_color = (255,255,255)
 main_window_line_type, calc_line_type = 10, 1
+
+
+# -----------------Mathmatical---------------------
+parser = Parser()
 
 # -----------------skin detect according to range defined avobe---------------------
 def return_skin(frame):
@@ -93,8 +98,40 @@ class Operation(object):
         model_class_dictionary = model wise dictionary ds
         calc = is operation is calcultor using sign language
         """
+def split_expression_into_arr(expression):
+    l = len(expression)
+    
+    if(expression[0] == "*" or expression[0] == "/"):
+        expression = expression[1:l]
+        l = l-1
         
-# -----------------Capture Func---------------------        
+    if(expression[l-1] == "*" or expression[l-1] == "/" or expression[l-1] == "+" or expression[l-1] == "-"):
+        expression = expression[0:(l-1)]
+        print(expression)
+    
+    
+    operand = ""
+    arr = []
+    for char in expression:
+        if(ord(char)>=ord('0') and ord(char)<=ord('9')):
+            operand += char
+        else:
+            arr.append(int(operand))
+            operand = ""
+            arr.append(char)
+    arr.append(int(operand))
+    return arr
+
+def get_res(expr):
+    try:    
+        x = parser.parse(expr).evaluate({})  # 6
+        return x, True
+
+    except:
+        return "Some thing Wrong", False
+
+       
+# -----------------Capture Func---------------------    
 def capture(camera_index, op):
     
     classifier = load_model(op.model)
@@ -108,6 +145,9 @@ def capture(camera_index, op):
     predicted_text = ""
     frame_captured = 0
     predicted_res_arr = []
+    
+    ok = False
+    err = False
     
     while cap.isOpened():
         
@@ -127,8 +167,21 @@ def capture(camera_index, op):
             contour = max(contours, key = cv2.contourArea)
             if(cv2.contourArea(contour) > 10000):
                 
-                cv2.imwrite('temp.jpg',  cv2.resize(binary_filtered,(80,80)))
-        
+                x1, y1, w1, h1 = cv2.boundingRect(contour)
+                
+                rectangle = binary_filtered[y1:y1+h1, x1:x1+w1]
+                
+                if(w1 > h1):
+                    rectangle = cv2.copyMakeBorder(rectangle, int((w1-h1)/2) , int((w1-h1)/2) , 0, 0, cv2.BORDER_CONSTANT, (0, 0, 0))
+                elif(h1 > w1):
+                    rectangle = cv2.copyMakeBorder(rectangle, 0, 0, int((h1-w1)/2) , int((h1-w1)/2) , cv2.BORDER_CONSTANT, (0, 0, 0))
+                
+                cv2.rectangle(frame,(x1 + posx, y1 + posy),(x1 + posx + w1, y1 + posy + h1),(0,255,0),2)
+
+#                cv2.imwrite('temp.jpg',  cv2.resize(binary_filtered,(80,80)))
+
+                cv2.imwrite('temp.jpg',  cv2.resize(rectangle,(80,80)))
+#        
                 test_image = image.load_img('temp.jpg', target_size = (80, 80))
                 test_image = image.img_to_array(test_image)
                 test_image = np.expand_dims(test_image, axis = 0)
@@ -149,29 +202,51 @@ def capture(camera_index, op):
                     prob = max_time_occured_item_occurences / frames_per_item
                     
                     if(prob >= detection_item_threshold):
-                        predicted_text += max_time_occured_item
+                        if(max_time_occured_item == "del" and len(predicted_text)!=0):
+                            predicted_text = predicted_text[0: len(predicted_text)-1]
+                        elif(max_time_occured_item == "="):
+                            res, ok = get_res(predicted_text)
+                            if(ok):
+                                predicted_text  = predicted_text + " = " + str(res)
+                                err = False                              
+                            else:
+                                print("er")
+                                err = True
+                                            
+                        else:
+                            if(ok):
+                                predicted_text = ""
+                                ok = False      
+                            err = True
+                            predicted_text += max_time_occured_item 
+
                         predicted_res_arr = []
-                        frame_captured = 0                   
-                    
-                
+                        frame_captured = 0  
+                        
                 cv2.putText(frame, str(pred), main_window_text_pos, font, main_window_font_scale, font_color, main_window_line_type)
                 
                 if(op.calc):
-                    cv2.putText(calc_screen, str(predicted_text), calc_text_pos, font, calc_font_scale, font_color, calc_line_type)
-    
+                    # clearing previous image
+                    calc_screen[:] = (64, 55, 88)
+                    cv2.putText(calc_screen, predicted_text, calc_text_pos, 
+                                font, calc_font_scale, font_color, calc_line_type)
+                    if(err):
+                        cv2.putText(calc_screen, "Wrong Expression", res_pos, font, calc_font_scale, font_color, calc_line_type)
+
                 frame_captured += 1    
             
         cv2.imshow("Orginal", frame)
         cv2.imshow("Only Skin", only_skin)
         cv2.imshow("Binary Skin", binary_filtered)
-        if(op.calc): cv2.imshow("Calculator Screen", calc_screen)
+        if(op.calc): 
+            cv2.imshow("Calculator Screen", calc_screen)
          
         if cv2.waitKey(1) == ord('q'):
             cv2.destroyAllWindows()
             break
 
 
-def manage(camera_index = "http://192.168.0.100:4747/video", operation = "-d"):
+def manage(camera_index = "http://192.168.0.102:4747/video", operation = "-c"):
     model = ""
     op_dict = {}
     
