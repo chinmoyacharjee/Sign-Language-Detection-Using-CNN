@@ -16,17 +16,14 @@ def create_model():
     
     # Adding a first convolutional layer
     classifier.add(Conv2D(16, (5, 5), input_shape = (80, 80, 3), activation = 'relu', kernel_initializer=initializers.random_normal(stddev=0.04,mean = 0.00), bias_initializer = initializers.Constant(value=0.2)))
-#    classifier.add(BatchNormalization(momentum = 0.99))
     classifier.add(MaxPooling2D(pool_size = (2, 2)))
 
     # Adding a second convolutional layer
     classifier.add(Conv2D(32, (5, 5), activation = 'relu', kernel_initializer=initializers.random_normal(stddev=0.04,mean = 0.00), bias_initializer = initializers.Constant(value=0.2)))
-#    classifier.add(BatchNormalization(momentum = 0.99))
     classifier.add(MaxPooling2D(pool_size = (2, 2)))
-#    classifier.add(Dropout(0.5))
-    
+
+    # Adding a third convolutional layer
     classifier.add(Conv2D(48, (4, 4), activation = 'relu', kernel_initializer=initializers.random_normal(stddev=0.04,mean = 0.00), bias_initializer = initializers.Constant(value=0.2)))
-#    classifier.add(BatchNormalization(momentum = 0.99))
     classifier.add(MaxPooling2D(pool_size = (2, 2)))
 
     # Flattening
@@ -34,56 +31,19 @@ def create_model():
     
     #Full connection
     classifier.add(Dense(512, activation = 'relu', kernel_initializer=initializers.random_normal(stddev=0.02,mean = 0.00), bias_initializer = initializers.Constant(value=0.1)))
-#    classifier.add(BatchNormalization(momentum = 0.99))
     
     # output layer    
     classifier.add(Dense(11, activation = 'softmax', kernel_initializer=initializers.random_normal(stddev=0.02,mean = 0.00), bias_initializer = initializers.Constant(value=0.1)))    
     
     return classifier
 
-"""
-img = cv2.imread('SplittedTrainTestDataSet/train_set/A/A_1.jpg')
-shape_x, shape_y, z = img.shape
-def create_model2():
-    classifier = Sequential()
-    
-    # Adding a first convolutional layer
-    classifier.add(Conv2D(32, (5, 5), input_shape = (80, 80, 3), activation = 'sigmoid'))
-#    classifier.add(BatchNormalization(momentum = 0.99))
-    classifier.add(MaxPooling2D(pool_size = (2, 2), strides=(2, 2), padding='same'))
-
-    # Adding a second convolutional layer
-    classifier.add(Conv2D(64, (5, 5), activation = 'sigmoid'))
-#    classifier.add(BatchNormalization(momentum = 0.99))
-    classifier.add(MaxPooling2D(pool_size = (5, 5)))
-#    classifier.add(Dropout(0.5))
-    
-#    classifier.add(Conv2D(48, (4, 4), activation = 'relu', kernel_initializer=initializers.random_normal(stddev=0.04,mean = 0.00), bias_initializer = initializers.Constant(value=0.2)))
-##    classifier.add(BatchNormalization(momentum = 0.99))
-#    classifier.add(MaxPooling2D(pool_size = (2, 2)))
-
-    # Flattening
-    classifier.add(Flatten())
-    
-    #Full connection
-    classifier.add(Dense(1024, activation = 'relu'))
-    classifier.add(Dropout(0.6))
-#    classifier.add(BatchNormalization(momentum = 0.99))
-    
-    # output layer    
-    classifier.add(Dense(24, activation = 'softmax'))    
-    
-    return classifier
-
-"""
 classifier = create_model()
 
 #classifier.compile(optimizer = 'adam', loss = 'categorical_crossentropy', metrics = ['accuracy'])
 
+#using optimizer sgd
 sgd = optimizers.SGD(lr=1e-2)
 classifier.compile(optimizer = sgd, loss = 'categorical_crossentropy', metrics = ['accuracy'])
-
-
 
 from keras.preprocessing.image import ImageDataGenerator
 
@@ -115,7 +75,7 @@ classifier.fit_generator(training_set,
                          steps_per_epoch = 22996//32 ,
                          validation_data=test_set,
                          epochs = 5,
-                         validation_steps = 7579 //32)
+                         validation_steps = 7579//32)
 
-classifier.save('digit_model_0_10.h5') 
+classifier.save('digit_model_0_10_OP3.h5') 
 
